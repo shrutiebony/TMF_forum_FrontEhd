@@ -5,7 +5,6 @@ import RelationshipForm from './RelationshipForm';
 import Footer from '../Footer/Footer';
 import JsonInput from './StoreJsonInput';
 const Home = () => {
-
   return (
     <div>
       <Header />
