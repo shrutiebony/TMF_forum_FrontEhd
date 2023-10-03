@@ -24,8 +24,9 @@ const LandingPage = () => {
     >
 
       <main className="content">
-        <h1 class="welcome-heading glow">Ghaziabad Toastmasters club welcomes you</h1>
-        <Link to={"/Home"} className="button">Read more about Us!</Link>
+        <h1 class="welcome-heading glow">Make your API TMF compliant now!</h1>
+        <Link to={"/Gallery"} className="button">Login as Admin</Link>
+        <Link to={"/Home"} className="button">Try for free</Link>
 
       </main>
 

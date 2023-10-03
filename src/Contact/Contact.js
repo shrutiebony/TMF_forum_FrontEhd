@@ -7,7 +7,6 @@ const Contact = () => {
     <div>
       <Header />
       <MapComponent />
-      <ContactFooter></ContactFooter>
     </div>
   );
 };

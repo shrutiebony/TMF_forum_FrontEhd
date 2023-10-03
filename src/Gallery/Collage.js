@@ -1,81 +1,86 @@
-import React, { useState, useEffect, useRef } from 'react';
-import './Collage.css';
-import image1 from './GalleryImages/Toastmaster1.jpeg';
-import image2 from './GalleryImages/Toastmaster2.png';
-import image3 from './GalleryImages/Toastmaster3.png';
-import image4 from './GalleryImages/Toastmaster4.png';
-import image5 from './GalleryImages/Toastmaster5.png';
-import image6 from './GalleryImages/Toastmaster6.png';
-import image7 from './GalleryImages/Toastmaster7.png';
-import image8 from './GalleryImages/Toastmaster8.png';
-import image9 from './GalleryImages/Toastmaster9.png';
-import image10 from './GalleryImages/Toastmaster10.png';
-import image11 from './GalleryImages/Toastmaster11.png';
-import image12 from './GalleryImages/Toastmaster12.png';
+import React, { useState } from 'react';
+import { useNavigate,Link } from 'react-router-dom'; // Import useNavigate hook
+import axios from 'axios';
+import './Collage.css'; // Import your custom CSS
 
+function LoginForm() {
+  const [userName, setUserName] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState(false);
 
+  const navigate = useNavigate(); // Initialize useNavigate hook
 
-const Collage = () => {
-  const images = [image1, image2, image3, image4, image5, image6, image7, image8, image9,image10,image11,image12];
-
-  const [selectedImage, setSelectedImage] = useState(null);
-  const modalRef = useRef(null);
-
-  const handleImageClick = (image) => {
-    setSelectedImage(image);
+  const handleUserNameChange = (event) => {
+    setUserName(event.target.value);
+    setLoginError(false); // Clear any login error on username change
   };
 
-  const handleCloseModal = () => {
-    setSelectedImage(null);
+  const handlePasswordChange = (event) => {
+    setPassword(event.target.value);
+    setLoginError(false); // Clear any login error on password change
   };
 
-  const handleKeyDown = (event) => {
-    if (event.key === 'Escape') {
-      handleCloseModal();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      const response = await axios.get('http://localhost:1001/getAdminCredentials');
+      const adminCredentials = response.data;
+
+      if (userName === adminCredentials.userName && password === adminCredentials.password) {
+        // Use navigate to redirect to "/Contact" page if login is successful
+        navigate('/Contact');
+      } else {
+        setLoginError(true);
+      }
+    } catch (error) {
+      console.error('Error fetching admin credentials:', error);
     }
   };
-
-  const handleClickOutsideModal = (event) => {
-    if (modalRef.current && !modalRef.current.contains(event.target)) {
-      handleCloseModal();
-    }
-  };
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('mousedown', handleClickOutsideModal);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('mousedown', handleClickOutsideModal);
-    };
-  }, []);
 
   return (
-    <div className="collage-container">
-      {images.map((image, index) => (
-        <img
-          key={index}
-          src={image}
-          alt={`Image ${index + 1}`}
-          className="collage-image"
-          onClick={() => handleImageClick(image)}
-        />
-      ))}
-
-      {selectedImage && (
-        <div className="modal">
-          <div className="modal-content" ref={modalRef}>
-            <img
-              src={selectedImage}
-              alt="Selected Image"
-              className="selected-image"
+    <div>
+       <Link className="back_Link"
+                to={"/"}
+              >
+                Go Back
+              </Link>
+    <div className="login-form-container">
+      <h2 className='h2_class'>Administrator Login</h2>
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="userName">Username:</label>
+          <div className="input-wrapper">
+            <input
+              type="text"
+              id="userName"
+              className="form-control"
+              value={userName}
+              onChange={handleUserNameChange}
+              required
             />
-            <span className="close" onClick={handleCloseModal}>&times;</span>
           </div>
         </div>
-      )}
+        <div className="form-group">
+          <label htmlFor="password">Password:</label>
+          <div className="input-wrapper">
+            <input
+              type="password"
+              id="password"
+              className="form-control"
+              value={password}
+              onChange={handlePasswordChange}
+              required
+            />
+          </div>
+        </div>
+        <button type="submit" className="red_button">
+          Login
+        </button>
+        {loginError && <p className="login-error">Admin login or password incorrect</p>}
+      </form>
+    </div>
     </div>
   );
-};
+}
 
-export default Collage;
+export default LoginForm;

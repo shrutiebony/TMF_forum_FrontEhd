@@ -22,6 +22,7 @@ color: rgba(0, 0, 0, 0.619);
   
   .button {
     padding: 10px 20px;
+    margin: 0 5px;
     background-color: rgba(87, 3, 3, 0.866);
     color: white;
     border: none;
@@ -60,9 +61,6 @@ color: rgba(0, 0, 0, 0.619);
   filter: blur(0px);
 
   }
-
-
-  
 
  
   .glow {

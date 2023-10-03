@@ -15,7 +15,7 @@ const Header = () => {
         <nav>
           <div className={`navbar ${showMenu ? 'show' : ''}`}>
             <Link className="logo" to={"/"}>
-              Ghaziabad Toastmasters Club
+              TM Forum 
             </Link>
             <div className={`nav-links ${showMenu ? 'show' : ''}`}>
               <Link
@@ -28,14 +28,14 @@ const Header = () => {
                 className="linkClass"
                 to={"/Gallery"}
               >
-                Gallery
+                Admin Login
               </Link>
-              <Link
+              {/* <Link
                 className="linkClass"
                 to={"/Contact"}
               >
                 Contact US
-              </Link>
+              </Link> */}
             </div>
             <div className="menu-icon" onClick={handleMenuToggle}>
               Menu

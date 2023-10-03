@@ -1,15 +1,20 @@
 import React from 'react';
-import CardComponent from './Cards';
+import MergedComponent from './Cards';
 import Header from '../Header/Header';
-import Introduction from './Introduction';
+import RelationshipForm from './RelationshipForm';
 import Footer from '../Footer/Footer';
+import JsonInput from './StoreJsonInput';
 const Home = () => {
+
   return (
     <div>
       <Header />
-      <Introduction />
-      <CardComponent></CardComponent>
-      <Footer></Footer>
+     
+      <JsonInput></JsonInput>
+      {/* <RelationshipForm></RelationshipForm> */}
+      <div style={{ marginBottom: '20px' }}>
+        <MergedComponent></MergedComponent>
+      </div>
     </div>
   );
 };

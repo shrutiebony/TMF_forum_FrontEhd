@@ -8,7 +8,7 @@ const Header = () => {
       <span role="img" aria-label="Crystal" className="header-icon">
           ❄️
         </span>
-        Toastmasters: Where Leaders are made
+        TMF Compliance: A place where all developers agree
         <span role="img" aria-label="Crystal" className="header-icon">
           ❄️
         </span>

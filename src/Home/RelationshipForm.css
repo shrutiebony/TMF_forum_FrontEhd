@@ -1,0 +1,76 @@
+/* RelationshipForm.css */
+
+.gridWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 70vh;
+  width: 100%;
+  background-color: #f0f0f0;
+}
+
+/* Grid Container */
+.grid-container {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  width: 600px;
+}
+
+/* Add Row Button */
+.add-row-button {
+  background-color:rgb(80, 3, 3) ;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-left: 20px;
+}
+
+.add-row-button:hover {
+  background-color: #0056b3;
+}
+
+/* Grid Item (Each Row) */
+.grid-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Dropdown and Textbox Styles */
+.dropdown,
+.textbox {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.dropdown:focus,
+.textbox:focus {
+  border-color: #007bff;
+}
+
+/* Submit Button */
+.submit-button {
+  background-color: #4caf50;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.submit-button:hover {
+  background-color: #45a049;
+}

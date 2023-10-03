@@ -1,16 +1,70 @@
-import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import './MapComponent.css';
+import React, { useState } from 'react';
+import axios from 'axios';
+import './MapComponent.css'; // Import your custom CSS
 
-const MapComponent = () => {
-  const position = [28.620259, 77.291188];
+function TMFSchemaComponent() {
+  const [inputValue, setInputValue] = useState('');
+  const [apiResponseAdd, setApiResponseAdd] = useState('');
+  const [apiResponseMakeUsable, setApiResponseMakeUsable] = useState('');
+  const [inputError, setInputError] = useState(false);
+
+  const handleInputChange = (event) => {
+    setInputValue(event.target.value);
+    setInputError(false);
+  };
+
+  const handleAddTMFSchema = async () => {
+    if (inputValue.trim() === '') {
+      setInputError(true);
+      return;
+    }
+
+    try {
+      const response = await axios.post('http://localhost:1001/postTMFJsonByAdmin', {
+        schema: inputValue
+      });
+      setApiResponseAdd(JSON.stringify(response.data, null, 2));
+    } catch (error) {
+      console.error('Error adding TMF schema:', error);
+    }
+  };
+
+  const handleMakeTMFSchemaUsable = async () => {
+    try {
+      const response = await axios.get('http://localhost:1001/persistAllTMF_FormatsBegins');
+      setApiResponseMakeUsable(JSON.stringify(response.data, null, 2));
+    } catch (error) {
+      console.error('Error making TMF schema usable:', error);
+    }
+  };
 
   return (
-    <div class="map-Container">
-<h1 class="map-heading">Meet Us for a coffee chat!</h1>
-    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3502.2078380017338!2d77.35470727431051!3d28.62353238449145!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390ce547c0b17071%3A0xefc95a9d095fd4bf!2sIIM%20Lucknow%20(Noida%20Campus)!5e0!3m2!1sen!2sin!4v1686343536852!5m2!1sen!2sin" class="GooglemapClass" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <div className="tmf-schema-container">
+      <h2 className="header">TMF Schema Management</h2>
+      <div className="input-container">
+        <textarea
+          rows="5"
+          value={inputValue}
+          onChange={handleInputChange}
+          className={`input-field ${inputError ? 'input-error' : ''}`}
+          placeholder="Enter TMF Schema"
+        />
+        {inputError && <p className="error-message">Input cannot be empty</p>}
+      </div>
+      <div className="buttons-container">
+        <button onClick={handleAddTMFSchema} className="btn-primary">
+          Add TMF Schema
+        </button>
+        <button onClick={handleMakeTMFSchemaUsable} className="btn-primary">
+          Make TMF Schema Usable
+        </button>
+      </div>
+      <div className="api-response-container">
+        <pre className="api-response">{apiResponseAdd}</pre>
+        <pre className="api-response">{apiResponseMakeUsable}</pre>
+      </div>
     </div>
   );
-};
+}
 
-export default MapComponent;
+export default TMFSchemaComponent;

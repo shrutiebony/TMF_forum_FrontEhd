@@ -1,14 +1,12 @@
 import React from 'react';
 import Header from '../Header/Header';
-import Collage from './Collage';
+import LoginForm from './Collage';
 import Footer from '../Footer/Footer';
 const Gallery = () => {
   return (
     <div>
-      <Header />
       {/* <Collage /> */}
-      <Footer/>
-      <Collage></Collage>
+      <LoginForm></LoginForm>
     </div>
   );
 };

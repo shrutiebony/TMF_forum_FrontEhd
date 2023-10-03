@@ -21,7 +21,7 @@ const Footer = () => {
   return (
     <footer className={`footer ${isFooterVisible ? 'visible' : ''}`}>
       <div className="footer-content">
-        <span>Created by Shruti</span>
+        <span>TM Forum Compilance</span>
       </div>
     </footer>
   );
