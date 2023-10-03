@@ -1,6 +1,4 @@
-# Getting Started with Create React App
-
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project is the front - end of the tool that can change any API to make it TMF compliant in the telecomm domain
 
 ## Available Scripts
 
