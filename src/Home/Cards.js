@@ -31,7 +31,6 @@ function MergedComponent() {
   const [queryValues, setQueryValues] = useState([]);
   const [rowCount, setRowCount] = useState(1);
   const [apiResponseAdd, setApiResponseAdd] = useState('');
-  const [mandatoryFields, setMandatoryFields] = useState([]);
 
 
   useEffect(() => {
@@ -188,13 +187,6 @@ function MergedComponent() {
     }
   };
 
-  function AddNewTmfField(selectedField) {
-    // Ensure the selectedField is not empty
-    if (selectedField) {
-      // Add the selectedField to the selectedFields array
-      setSelectedFields((prevSelectedFields) => [...prevSelectedFields, selectedField]);
-    }
-  }
   const handleHttpStatusSelect = (event) => {
     const selectedMethodType = event.target.value;
     setSelectedHttpStatus(selectedMethodType);
@@ -244,7 +236,6 @@ function MergedComponent() {
       };
       const response = await axios.post('http://localhost:1001/storeTheUserChosenParameters', requestBody);
       setDefaultFieldNames(response.data);
-      setMandatoryFields(availableFields.filter(field => !defaultFieldNames.includes(field)))
 
       fetchAvailableFields();
     } catch (error) {
@@ -314,6 +305,7 @@ function MergedComponent() {
     
       setCriteria([
         { tableName: '', fieldName: '', searchCriteria: '' }      ]);
+    
       try {
         const response = await axios.get('http://localhost:1001/deleteAllSearchCriteria');
         console.log('Search criteria reset:', response.data);
@@ -321,6 +313,8 @@ function MergedComponent() {
         console.error('Error resetting search criteria:', error);
       }
     };
+    
+    
       const handleSearch = async () => {
         try {
           const apiUrl = 'http://localhost:1001/saveDatabaseSearchCriteria';
@@ -340,11 +334,14 @@ function MergedComponent() {
           console.error('Error sending data to API:', error);
         }
       };
-  const handleChange = (index, field, value) => {
+    
+  
+    const handleChange = (index, field, value) => {
       const updatedCriteria = [...criteria];
       updatedCriteria[index][field] = value;
       setCriteria(updatedCriteria);
     };
+
   const handleChooseFields = async () => {
    
     try {
@@ -385,9 +382,11 @@ function MergedComponent() {
       } catch (error) {
       console.error('Error saving defaults:', error);
     }
+
   };
   const handleDownload = () => {
     const apiResponseFinal = finalResponse;
+  
     const blob = new Blob([JSON.stringify(apiResponseFinal)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -395,6 +394,8 @@ function MergedComponent() {
     link.download = 'apiResponse.json';
     link.click();
   };
+  
+
   const handleReset = async () => {
     try {
       await axios.get('http://localhost:1001/deleteAllUserInput');
@@ -409,11 +410,15 @@ function MergedComponent() {
       ...prevDefaultFieldValues,
       [fieldNameMandatory]: inputValue,
     }));
-
     console.log('DefaultFieldValues', defaultFieldNames);
   };
+
   return (
     <div className='body-container'>
+
+ 
+
+
     <div className="container">
       <div className="button-container">
       {/* <button className="black-square-button" onClick={fetchPathNames}>Get TMF Names</button> */}
@@ -454,6 +459,7 @@ function MergedComponent() {
           ))}
         </select> */}
       </div>
+
       {/* <button className="button json-button" onClick={() => {
         fetchApiResponse();
         fetchResponseTMF();
@@ -461,46 +467,31 @@ function MergedComponent() {
       <h2 className="heading">JSON Format:</h2>
       <pre className="pre">{apiResponse}</pre>
       <pre className="pre">{outResponseAPI}</pre> */}
+
       <button className="button json-button" onClick={handleChooseSchema}>Choose TMF Schema</button>
+
       <div className="field-selection-container">
       <div className="column">
   <ul className="list">
-    {defaultFieldNames.map((field) => {
+    {availableFields.map((field) => {
       const isCommonField = defaultFieldNames.includes(field);
+    
       return (
         <li key={field} className="list-item">
-           <li key="0" className="list-item">
-    
-    </li>
-    <span className="red-star">*</span>
+          {isCommonField ? <span className="red-star">*</span> : null}
           {field}
-          <button onClick={AddNewTmfField} className='button'>Add Criteria</button>
-
-                  </li>
+          <button className="button" onClick={() => handleAddField(field)}>Add</button>
+        </li>
       );
     })}
-     {mandatoryFields.map((field) => {
-      const isCommonField = defaultFieldNames.includes(field);
-      return (
-        <li key={field} className="list-item">
-          {field}
-       <button onClick={AddNewTmfField} className='button'>Add Criteria</button>
-           </li>
-      );
-    })}
-
-
-
-    
   </ul>
 </div>
 
         <div className="column">
           <ul className="list">
-            
             {selectedFields.map((field) => (
               <li key={field} className="list-item">
-                {/* {field} */}
+                {field}
                 <table>
                   <tr>
                                   <td>
@@ -525,8 +516,8 @@ function MergedComponent() {
                 <input
                   type="text"
                   className="textbox"
-                  placeholder="Enter query"
-                  value={queryValues[field]?.fieldName || ''}
+                  placeholder="Enter field name"
+                  value={fieldValues[field]?.fieldName || ''}
                   onChange={(e) => handleInputChange(e, field, 'fieldName')}
                 />
                 </td>
@@ -547,7 +538,7 @@ function MergedComponent() {
             <td>
         <input
           type="text"
-          className={`textbox ${isEmptyField[fieldName] ? 'empty-field' : ''}`}
+          className={`textbox2 ${isEmptyField[fieldName] ? 'empty-field' : ''}`}
           placeholder="Enter default value"
           value={defaultFieldValues[fieldName] || ''}
           onChange={(e) => handleDefaultValues(e, fieldName)}
@@ -627,6 +618,7 @@ function MergedComponent() {
       <button onClick={handleDeleteCriteria} className='button'>Delete Criteria</button> */}
 
 <button onClick={handleSearch} className='button'>Search with this criteria</button>
+
 <button className="red-button" style={{padding:'1.2%'}} onClick={handleResetCriteria}>
   Reset Criteria
 </button>
@@ -634,8 +626,10 @@ function MergedComponent() {
 <div>
       </div>
     </div>
+
       <div className="api-response">
         <h2 className="heading">API Response</h2>
+
         <div>
       {finalResponse && (
         <div>
