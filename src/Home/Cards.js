@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './Cards.css';
+import { useNavigate,Link } from 'react-router-dom';
+import { color } from '@mui/system';
 
 function MergedComponent() {
   const [endPoints, setEndPoints] = useState([]);
@@ -18,19 +20,23 @@ function MergedComponent() {
   const [finalResponse, setFinalResponse] = useState('');
   const [isFieldsChosen, setIsFieldsChosen] = useState(false);
   const [isEmptyField, setIsEmptyField] = useState({});
-  const [inputValue, setInputValue] = useState('');
+  const [inputValueURL, setInputValueURL] = useState('');
   const [availableFields, setAvailableFields] = useState([]);
   const [selectedFields, setSelectedFields] = useState([]);
   const [fieldValues, setFieldValues] = useState({});
   const [defaultFieldNames, setDefaultFieldNames] = useState([]);
-
+  const [inputValue, setInputValue] = useState('');
+  const [inputError, setInputError] = useState(false);
   const [defaultFieldValues, setDefaultFieldValues] = useState([]);
+  const [queryValues, setQueryValues] = useState([]);
   const [rowCount, setRowCount] = useState(1);
+  const [apiResponseAdd, setApiResponseAdd] = useState('');
+  const [mandatoryFields, setMandatoryFields] = useState([]);
 
 
   useEffect(() => {
     fetchEndPoints();
-        fetchAvailableFields();
+        // fetchAvailableFields();
   }, []);
 
   
@@ -47,7 +53,26 @@ function MergedComponent() {
     }
   };
 
+  const handleInputChangeURL = (event) => {
+    setInputValueURL(event.target.value);
+    setInputError(false);
+  };
 
+  const handleAddTMFSchema = async () => {
+    if (inputValueURL.trim() === '') {
+      setInputError(true);
+      return;
+    }
+
+    try {
+      const response = await axios.post('http://localhost:1001/postTMFJsonByAdmin', {
+        schema: inputValueURL
+      });
+      setApiResponseAdd(JSON.stringify(response.data, null, 2));
+    } catch (error) {
+      console.error('Error adding TMF schema:', error);
+    }
+  };
 
   const fetchEndPoints = async () => {
     try {
@@ -116,6 +141,7 @@ function MergedComponent() {
       const defaultsData = Object.keys(defaultFieldValues).map((fieldName) => ({
         tmfFieldName: fieldName,
         defaultValue: defaultFieldValues[fieldName],
+        queryFieldValue: queryValues[fieldName]
       }));
       const requestBody = {
         endPoint:outputEndPoints,
@@ -162,6 +188,13 @@ function MergedComponent() {
     }
   };
 
+  function AddNewTmfField(selectedField) {
+    // Ensure the selectedField is not empty
+    if (selectedField) {
+      // Add the selectedField to the selectedFields array
+      setSelectedFields((prevSelectedFields) => [...prevSelectedFields, selectedField]);
+    }
+  }
   const handleHttpStatusSelect = (event) => {
     const selectedMethodType = event.target.value;
     setSelectedHttpStatus(selectedMethodType);
@@ -210,6 +243,8 @@ function MergedComponent() {
 
       };
       const response = await axios.post('http://localhost:1001/storeTheUserChosenParameters', requestBody);
+      setDefaultFieldNames(response.data);
+      setMandatoryFields(availableFields.filter(field => !defaultFieldNames.includes(field)))
 
       fetchAvailableFields();
     } catch (error) {
@@ -217,7 +252,13 @@ function MergedComponent() {
     }
   };
 
-
+  const handleMakeTMFSchemaUsable = async () => {
+    try {
+      const response = await axios.get('http://localhost:1001/persistAllTMF_FormatsBegins');
+    } catch (error) {
+      console.error('Error making TMF schema usable:', error);
+    }
+  };
 
     const [criteria, setCriteria] = useState([
       { tableName: '', fieldName: '', searchCriteria: '' },
@@ -273,7 +314,6 @@ function MergedComponent() {
     
       setCriteria([
         { tableName: '', fieldName: '', searchCriteria: '' }      ]);
-    
       try {
         const response = await axios.get('http://localhost:1001/deleteAllSearchCriteria');
         console.log('Search criteria reset:', response.data);
@@ -281,8 +321,6 @@ function MergedComponent() {
         console.error('Error resetting search criteria:', error);
       }
     };
-    
-    
       const handleSearch = async () => {
         try {
           const apiUrl = 'http://localhost:1001/saveDatabaseSearchCriteria';
@@ -302,18 +340,15 @@ function MergedComponent() {
           console.error('Error sending data to API:', error);
         }
       };
-    
-  
-    const handleChange = (index, field, value) => {
+  const handleChange = (index, field, value) => {
       const updatedCriteria = [...criteria];
       updatedCriteria[index][field] = value;
       setCriteria(updatedCriteria);
     };
-
   const handleChooseFields = async () => {
+   
     try {
       const saveCustomerMapping = "http://localhost:1001/saveTmfToCustomerMapping";
-      setIsFieldsChosen(true);
       
       const mapping = selectedFields.map((field) => ({
         tmfFieldName: field,
@@ -327,16 +362,32 @@ function MergedComponent() {
         mapping: mapping,
       };
       
-
       const response = await axios.post(saveCustomerMapping, payload);
-      setDefaultFieldNames(response.data);
     } catch (error) {
       console.error('Error choosing fields:', error);
+    }
+
+    try {
+      const defaultsData = Object.keys(defaultFieldValues).map((fieldName) => ({
+        tmfFieldName: fieldName,
+        defaultValue: defaultFieldValues[fieldName],
+        queryValues:queryValues
+      }));
+      const requestBody = {
+        endPoint:outputEndPoints,
+        pathName: outputPathName,
+        methodType: selectedHttpStatus,
+        defaults: defaultsData,
+      };
+      const response = await axios.post('http://localhost:1001/saveDefaults', requestBody);
+      console.log('Defaults saved:', response.data);
+        setDefaultFieldValues({});
+      } catch (error) {
+      console.error('Error saving defaults:', error);
     }
   };
   const handleDownload = () => {
     const apiResponseFinal = finalResponse;
-  
     const blob = new Blob([JSON.stringify(apiResponseFinal)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -344,8 +395,6 @@ function MergedComponent() {
     link.download = 'apiResponse.json';
     link.click();
   };
-  
-
   const handleReset = async () => {
     try {
       await axios.get('http://localhost:1001/deleteAllUserInput');
@@ -360,79 +409,101 @@ function MergedComponent() {
       ...prevDefaultFieldValues,
       [fieldNameMandatory]: inputValue,
     }));
+
     console.log('DefaultFieldValues', defaultFieldNames);
   };
-
   return (
-    <div>
+    <div className='body-container'>
     <div className="container">
       <div className="button-container">
-      <button className="black-square-button" onClick={fetchEndPoints}>Get Endpoints </button>
-        <select className="select" value={outputEndPoints} onChange={handleEndPointSelect}>
-          <option value="">Select an endPoint</option>
-          {endPoints.map((endPoint, index) => (
-            <option key={index} value={endPoint}>
-              {endPoint}
-            </option>
-          ))}
+      {/* <button className="black-square-button" onClick={fetchPathNames}>Get TMF Names</button> */}
+
+      <select className="select" value={outputEndPoints} onChange={handleEndPointSelect}>
+            <option value="">Select TMF name</option>
+            {endPoints.map((endPoint, index) => (
+              <option key={index} value={endPoint}>
+                {endPoint}
+              </option>
+            ))}
           </select>
-        <button className="black-square-button" onClick={fetchPathNames}>Get Path Names</button>
+        {/* <button className="black-square-button" onClick={fetchPathNames}>Get Path Names</button> */}
         <select className="select" value={outputPathName} onChange={handlePathNameSelect}>
-          <option value="">Select a path</option>
+          <option value="">Select desired TMF path</option>
           {pathNames.map((pathName, index) => (
             <option key={index} value={pathName}>
               {pathName}
             </option>
           ))}
         </select>
-        <button className="black-square-button" onClick={fetchHttpStatuses}>HTTP Status</button>
+        {/* <button className="black-square-button" onClick={fetchHttpStatuses}>HTTP Status</button> */}
         <select className="select" value={selectedHttpStatus} onChange={handleHttpStatusSelect}>
-          <option value="">Select an option</option>
+          <option value="">Select desired TMF HTTP status</option>
           {httpStatuses.map((status, index) => (
             <option key={index} value={status}>
               {status}
             </option>
           ))}
         </select>
-        <button className="black-square-button" onClick={fetchResponseTypes}>Response Types</button>
-        <select className="select" value={selectedResponseType} onChange={handleResponseTypeSelect}>
-          <option value="">Select an option</option>
+        {/* <but ton className="black-square-button" onClick={fetchResponseTypes}>Response Types</button> */}
+        {/* <select className="select" value={selectedResponseType} onChange={handleResponseTypeSelect}>
+          <option value="">Select desired TMF response type</option>
           {responseTypes.map((responseType, index) => (
             <option key={index} value={responseType}>
               {responseType}
             </option>
           ))}
-        </select>
+        </select> */}
       </div>
-
-      <button className="button json-button" onClick={() => {
+      {/* <button className="button json-button" onClick={() => {
         fetchApiResponse();
         fetchResponseTMF();
       }}>JSON Format</button>
       <h2 className="heading">JSON Format:</h2>
       <pre className="pre">{apiResponse}</pre>
-      <pre className="pre">{outResponseAPI}</pre>
-
-      <button className="button json-button" onClick={handleChooseSchema}>Choose Schema</button>
-
+      <pre className="pre">{outResponseAPI}</pre> */}
+      <button className="button json-button" onClick={handleChooseSchema}>Choose TMF Schema</button>
       <div className="field-selection-container">
+      <div className="column">
+  <ul className="list">
+    {defaultFieldNames.map((field) => {
+      const isCommonField = defaultFieldNames.includes(field);
+      return (
+        <li key={field} className="list-item">
+           <li key="0" className="list-item">
+    
+    </li>
+    <span className="red-star">*</span>
+          {field}
+          <button onClick={AddNewTmfField} className='button'>Add Criteria</button>
+
+                  </li>
+      );
+    })}
+     {mandatoryFields.map((field) => {
+      const isCommonField = defaultFieldNames.includes(field);
+      return (
+        <li key={field} className="list-item">
+          {field}
+       <button onClick={AddNewTmfField} className='button'>Add Criteria</button>
+           </li>
+      );
+    })}
+
+
+
+    
+  </ul>
+</div>
+
         <div className="column">
-          <h2 className="heading">Fields</h2>
           <ul className="list">
-            {availableFields.map((field) => (
-              <li key={field} className="list-item">
-                {field}
-                <button className="button" onClick={() => handleAddField(field)}>Add</button>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="column">
-          <h2 className="heading">Chosen</h2>
-          <ul className="list">
+            
             {selectedFields.map((field) => (
               <li key={field} className="list-item">
-                {field}
+                {/* {field} */}
+                <table>
+                  <tr>
+                                  <td>
                 <input
                   type="text"
                   className="textbox"
@@ -440,6 +511,8 @@ function MergedComponent() {
                   value={fieldValues[field]?.table || ''}
                   onChange={(e) => handleInputChange(e, field, 'table')}
                 />
+                </td>
+                <td>
                 <input
                   type="text"
                   className="textbox"
@@ -447,47 +520,79 @@ function MergedComponent() {
                   value={fieldValues[field]?.fieldName || ''}
                   onChange={(e) => handleInputChange(e, field, 'fieldName')}
                 />
+                </td>
+                <td>
+                <input
+                  type="text"
+                  className="textbox"
+                  placeholder="Enter query"
+                  value={queryValues[field]?.fieldName || ''}
+                  onChange={(e) => handleInputChange(e, field, 'fieldName')}
+                />
+                </td>
+                </tr>
+                </table>
                 <button className="button red-button" onClick={() => handleRemoveField(field)}>
                   Remove
                 </button>
+            <div className="field-selection-container">
+              <ul className="list">
+              {defaultFieldNames.map((fieldName) => {
+  if (!selectedFields.includes(fieldName)) {
+    return (
+      <li key={fieldName} className="list-item">
+        {fieldName}
+        <table>
+          <tr>
+            <td>
+        <input
+          type="text"
+          className={`textbox ${isEmptyField[fieldName] ? 'empty-field' : ''}`}
+          placeholder="Enter default value"
+          value={defaultFieldValues[fieldName] || ''}
+          onChange={(e) => handleDefaultValues(e, fieldName)}
+        />
+        </td>
+        </tr>
+        </table>
+      </li>
+    );
+  }
+  return null; // Field is in selectedFields, don't render it
+})}
+              </ul>
+            </div> 
               </li>
             ))}
           </ul>
         </div>
       </div>
+      
       <div className="controls">
         <button className="button search-button" onClick={handleChooseFields}>Choose Fields</button>
       </div>
     
 
-      
-      {isFieldsChosen && (
-        <>
-          <h2>Enter default values</h2>
-          <div className="field-selection-container-border">
-            <div className="field-selection-container">
-              <ul className="list">
-                {defaultFieldNames.map((fieldName) => (
-                  <li key={fieldName} className="list-item">
-                    {fieldName}
-                    <input
-                      type="text"
-                      className={`textbox ${isEmptyField[fieldName] ? 'empty-field' : ''}`}
-                      placeholder="Enter value"
-                      value={defaultFieldValues[fieldName] || ''}
-                      onChange={(e) => handleDefaultValues(e, fieldName)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <button onClick={handleAddDefault} className='button search-button'>Add Defaults</button>
-        </>
-      )}
+      <div>
+        <div className="input-select-wrapper">
+          <textarea
+            rows="1"
+            value={inputValueURL}
+            onChange={handleInputChangeURL}
+            className={`URL_input-field ${inputError ? 'URL_input-error' : ''}`}
+            placeholder="If the TMF number you want is not available in the dropdown below then enter TMF swagger URL to add another TMF name"
+          />
+  
+        </div>
+        {inputError && <p className="URL_error-message">Input cannot be empty</p>}
+          <button onClick={handleAddTMFSchema} className="button json-button">
+            Add TMF number
+          </button>
+      </div>
+ 
 
       <div className='criteria-row-wrapper'>
-      {criteria.map((item, index) => (
+      {/* {criteria.map((item, index) => (
         <div key={index} className="criteria-row">
           <input
             type="text"
@@ -511,23 +616,26 @@ function MergedComponent() {
             onChange={(e) => handleChange(index, 'searchCriteria', e.target.value)}
           />
         </div>
-      ))}
+      ))} */}
+      <input
+            type="text"
+            placeholder="Field Name"
+            className='textbox2'
+                      />
        <div>
-      <button onClick={handleAddCriteria} className='button'>Add Criteria</button>
-      <button onClick={handleDeleteCriteria} className='button'>Delete Criteria</button>
+      {/* <button onClick={handleAddCriteria} className='button'>Add Criteria</button>
+      <button onClick={handleDeleteCriteria} className='button'>Delete Criteria</button> */}
 
-      <button className="button" onClick={handleResetCriteria}>
+<button onClick={handleSearch} className='button'>Search with this criteria</button>
+<button className="red-button" style={{padding:'1.2%'}} onClick={handleResetCriteria}>
   Reset Criteria
 </button>
 </div>
 <div>
-      <button onClick={handleSearch} className='search-button red-button'>Search</button>
       </div>
     </div>
-
       <div className="api-response">
         <h2 className="heading">API Response</h2>
-
         <div>
       {finalResponse && (
         <div>
@@ -540,10 +648,51 @@ function MergedComponent() {
         <button className="button" onClick={handleDownload}>Download</button>
         <button className="red-button" onClick={handleReset}>Delete All My Data</button>
       </div>
-     
+      <div style={{ position: 'fixed', bottom: '10px', right: '10px' }}>
+  <Link className="back_Link" to={"/"}>
+    Go Back
+  </Link>
+</div>
       </div>
       <style jsx>{`
+      body-container{
+        background-color: #f5f5f5;
+width:100%;
+.grid-container{
+  display: grid;
+    grid-template-columns: 1fr 1fr;
+  gap:20px;
+}
+      }
+      .input-select-wrapper {
+        display: flex;
+        gap:10px;
+        align-items: center; 
+      }
+      .red-star {
+        color: red; /* Set the color of the star to red */
+        margin-right: 5px; /* Adjust the margin as needed to position the star */
+        font-size: 12px; /* Adjust the font size of the star as needed */
+      }
+      
+      .button_on_black
+      {
+        background-color: green;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s, color 0.3s, transform 0.2s;
+        font-size: 16px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 10px;
+      }
 .container {
+  background-color: #f5f5f5;
+
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -558,10 +707,10 @@ function MergedComponent() {
 }
 
 .button {
-  background-color: rgb(2, 2, 54);
+  background-color: #002800;
   color: #fff;
   padding: 10px 20px;
-  border: none;
+  border: 1px solid black;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s, color 0.3s, transform 0.2s;
@@ -572,16 +721,115 @@ function MergedComponent() {
   margin-right: 10px;
 }
 .button:hover {
-  background-color: rgb(80, 3, 3);
+  background-color: #005000;
   transform: scale(1.05);
   color: white;
 }
-
+.back_Link
+{
+  position: 'fixed'; bottom: '10px'; right: '10px';
+  text-decoration: none;
+  background-color: rgb(80, 3, 3);
+  color: #fff;
+          padding: 15px 54px;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          transition: background-color 0.3s, color 0.3s, transform 0.2s;
+          font-size: 16px;
+          font-weight: bold;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+}
 .select {
   padding: 10px 5px;
-  border: 1px solid #ccc;
+  // border: 2px solid rgb(2, 2, 54);
   border-radius: 25px;
   margin: 0 5px;
+}
+.tmf-schema-container {
+  // margin: auto;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+  width:100%;
+}
+
+.header {
+  text-align: center;
+  color: white;
+}
+
+.input-container {
+}
+
+.URL_input-field {
+  border: 3px solid black;
+  border-radius: 5%;
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.URL_input-field:focus {
+  border-color: #007bff;
+}
+
+.URL_input-error {
+  border-color: #dc3545;
+}
+
+.URL_error-message {
+  color: #dc3545;
+  font-size: 12px;
+  
+}
+
+.buttons-container {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.btn-primary 
+{
+  background-color: rgb(80, 3, 3);
+  margin-left: 5px;
+  color: #fff;
+  margin-top: 10px;
+          padding: 5px 14px;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          transition: background-color 0.3s, color 0.3s, transform 0.2s;
+          font-size: 16px;
+          font-weight: bold;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+}
+
+.btn-primary:hover {
+  background-color:  rgb(1, 2, 32);
+}
+
+.api-response-container {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.api-response-header {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.api-response {
+  background-color: #f5f5f5;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  white-space: pre-wrap;
 }
 
 .search-button {
@@ -637,7 +885,6 @@ function MergedComponent() {
 .column {
   flex: 1;
   padding: 20px;
-  border: 1px solid #ccc;
   border-radius: 25px;
   margin: 5px;
 }
@@ -657,12 +904,16 @@ function MergedComponent() {
 
 .textbox {
   padding: 10px;
-  border: 2px solid black;
-  border-radius: 25px;
-  width: 200px;
-  margin: 5px;
+  border: 2px solid #002800;
+  width: 100px;
 }
-
+.textbox2 {
+  padding: 10px;
+  border: 2px solid rgb(80, 3, 3);
+  margin:5px;
+  width: 600px;
+  align:center;
+}
 .criteria-row {
   display: flex;
   gap: 20px;
